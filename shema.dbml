@@ -1,0 +1,68 @@
+// Схема бази даних для спеціалізованої крамниці
+// Автор: Корнілова Єлизавета
+// Група: 6.04.125.010.23.2
+// Дата: 2025-10-16
+
+// Таблиця для зберігання даних про клієнтів
+Table Users {
+  id integer [pk, increment] // Первинний ключ, авто-інкремент
+  name varchar(255) [not null] // Ім'я, обов'язкове поле
+  email varchar(255) [unique, not null] // Email, унікальний і обов'язковий
+  password_hash varchar(255) [not null] // Хеш паролю, обов'язковий
+  registration_date timestamp [not null, default: `now()`] // Дата реєстрації
+  
+  Note: 'Таблиця для зберігання інформації про зареєстрованих клієнтів магазину'
+}
+
+// Таблиця-довідник для категорій товарів
+Table Categories {
+  id integer [pk, increment] // Первинний ключ
+  name varchar(100) [unique, not null] // Назва категорії, унікальна
+  description text // Опис категорії, необов'язковий
+  
+  Note: 'Довідник категорій товарів для структурування каталогу'
+}
+
+// Таблиця для товарів магазину
+Table Products {
+  id integer [pk, increment]
+  name varchar(255) [not null]
+  description text
+  price decimal(10, 2) [not null] // Використовуємо decimal для грошей
+  stock_quantity integer [not null, default: 0] // Кількість на складі
+  category_id integer [not null] // Зовнішній ключ для зв'язку з категорією
+  
+  Note: 'Каталог товарів з інформацією про ціни та залишки на складі'
+}
+
+// Створюємо зв'язок один-до-багатьох
+// Одна Категорія може мати багато Товарів
+Ref: Categories.id < Products.category_id [delete: cascade]
+
+// Таблиця для замовлень
+Table Orders {
+  id integer [pk, increment]
+  user_id integer [not null] // Зовнішній ключ для зв'язку з користувачем
+  status varchar(50) [not null, default: `pending`] // Статус замовлення
+  created_at timestamp [not null, default: `now()`] // Дата створення
+  
+  Note: 'Історія замовлень клієнтів з інформацією про статус'
+}
+
+// Створюємо зв'язок один-до-багатьох
+// Один Користувач може мати багато Замовлень
+Ref: Users.id < Orders.user_id [delete: restrict]
+
+// Асоціативна таблиця для зв'язку багато-до-багатьох
+Table Order_Items {
+  order_id integer [pk] // Частина складеного первинного ключа
+  product_id integer [pk] // Друга частина складеного первинного ключа
+  quantity integer [not null, default: 1] // Кількість товару
+  price_at_purchase decimal(10, 2) [not null] // Ціна на момент покупки
+  
+  Note: 'Асоціативна таблиця, що зберігає склад замовлень та ціни на момент покупки'
+}
+
+// Створюємо зв'язки, що ведуть до асоціативної таблиці
+Ref: Orders.id < Order_Items.order_id [delete: cascade]
+Ref: Products.id < Order_Items.product_id [delete: restrict]
